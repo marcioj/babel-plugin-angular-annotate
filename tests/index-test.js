@@ -26,6 +26,7 @@ describe('babel-plugin-angular-annotate tests', function() {
 
   it('works', function() {
     annotatesTheCode('controller');
+    annotatesTheCode('config');
   });
 
 });
