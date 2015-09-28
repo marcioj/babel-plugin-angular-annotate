@@ -8,26 +8,32 @@ const babel = require('babel-core');
 
 describe('babel-plugin-angular-annotate tests', function() {
 
-  function transform(content) {
+  function transform(content, useAnnotate = true) {
+    let plugins = useAnnotate ? [plugin] : [];
     return babel.transform(content, {
       blacklist: ['strict'],
-      plugins: [plugin]
+      plugins: plugins
     }).code;
   }
 
-  function annotatesTheCode(filePath) {
-    var actualPath = path.join(__dirname, 'fixtures', filePath, 'actual.js');
+  function assertTransformation(filepath) {
+    var actualPath = path.join(__dirname, 'fixtures', filepath, 'actual.js');
     var actualContent = fs.readFileSync(actualPath, 'utf8');
-    var expectedPath = path.join(__dirname, 'fixtures', filePath, 'expected.js');
+    var expectedPath = path.join(__dirname, 'fixtures', filepath, 'expected.js');
     var expectedContent = fs.readFileSync(expectedPath, 'utf8');
-    var transformedContent = transform(actualContent);
-    expect(transformedContent.trim()).to.equal(expectedContent.trim());
+    expect(transform(actualContent)).to.equal(transform(expectedContent, false));
   }
 
-  it('works', function() {
-    annotatesTheCode('controller');
-    annotatesTheCode('config');
-    annotatesTheCode('service');
+  it('converts module.controller', function() {
+    assertTransformation('controller');
+  });
+
+  it('converts module.config', function() {
+    assertTransformation('config');
+  });
+
+  it('converts module.service', function() {
+    assertTransformation('service');
   });
 
 });
