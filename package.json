@@ -1,0 +1,30 @@
+{
+  "name": "babel-plugin-angular-annotate",
+  "version": "0.0.0",
+  "description": "Make angular injection annotation minification proof",
+  "repository": "marcioj/babel-plugin-angular-annotate",
+  "author": {
+    "name": "Marcio Junior",
+    "email": "marciojunior1991@gmail.com",
+    "url": "https://github.com/marcioj"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "keywords": [
+    "babel-plugin"
+  ],
+  "scripts": {
+    "test": "npm run lint && mocha --require babel-core/register --reporter spec tests/**/*-test.js",
+    "lint": "eslint lib",
+    "prepublish": "babel lib --out-dir dist --copy-files"
+  },
+  "devDependencies": {
+    "babel-core": "^5.8.0",
+    "babel-eslint": "^4.1.3",
+    "chai": "^3.2.0",
+    "eslint": "^1.5.1",
+    "mocha": "^2.3.0"
+  }
+}
