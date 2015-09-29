@@ -47,4 +47,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts module.provider', function() {
     assertTransformation('provider');
   });
+
+  it('converts module.animation', function() {
+    assertTransformation('animation');
+  });
 });
