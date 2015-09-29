@@ -39,4 +39,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts module.directive', function() {
     assertTransformation('directive');
   });
+
+  it('converts module.filter', function() {
+    assertTransformation('filter');
+  });
 });
