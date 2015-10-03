@@ -51,4 +51,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts module.animation', function() {
     assertTransformation('animation');
   });
+
+  it('converts module config callback', function() {
+    assertTransformation('module_config_callback');
+  });
 });
