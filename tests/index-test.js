@@ -63,4 +63,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts module.run', function() {
     assertTransformation('run');
   });
+
+  it('converts $injector.invoke', function() {
+    assertTransformation('invoke');
+  });
 });
