@@ -12,7 +12,7 @@ npm install babel-plugin-angular-annotate
 
 ## Usage
 
-```sh
+```js
 var babelPluginAngularAnnotate = require('babel-plugin-angular-annotate');
 
 babelPluginAngularAnnotate();
