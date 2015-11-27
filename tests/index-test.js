@@ -67,4 +67,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts $injector.invoke', function() {
     assertTransformation('invoke');
   });
+
+  it('converts the todo mvc code', function() {
+    assertTransformation('todo_mvc');
+  });
 });
