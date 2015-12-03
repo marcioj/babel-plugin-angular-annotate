@@ -1,8 +1,10 @@
 # babel-plugin-angular-annotate
 
->  Make angular injection annotation minification proof
+>  Make angular dependency annotation minification proof
 
 [![Build Status][travis_badge]][travis]
+
+:warning: This is still under development :warning:
 
 ## Installation
 
