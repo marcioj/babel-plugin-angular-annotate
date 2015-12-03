@@ -1,7 +1,7 @@
 import chai from 'chai';
 import path from 'path';
 import fs from 'fs';
-import plugin from '../lib';
+import plugin from '../src';
 
 const expect = chai.expect;
 const babel = require('babel-core');

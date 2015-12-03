@@ -8,10 +8,7 @@
     "email": "marciojunior1991@gmail.com",
     "url": "https://github.com/marcioj"
   },
-  "files": [
-    "dist"
-  ],
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "keywords": [
     "babel-plugin"
   ],
@@ -20,7 +17,9 @@
     "test:watch": "npm run mocha -- -w",
     "mocha": "mocha --require babel-core/register --reporter spec tests/**/*-test.js",
     "lint": "eslint lib",
-    "prepublish": "babel lib --out-dir dist --copy-files"
+    "build": "babel lib --out-dir lib --copy-files",
+    "push": "git pull --rebase && npm test && git push && npm run build",
+    "postpublish": "git push --follow-tags"
   },
   "devDependencies": {
     "babel-core": "^5.8.0",
