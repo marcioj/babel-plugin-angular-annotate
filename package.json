@@ -17,15 +17,16 @@
     "test:watch": "npm run mocha -- -w",
     "mocha": "mocha --require babel-core/register --reporter spec tests/**/*-test.js",
     "lint": "eslint src",
-    "build": "babel src --out-dir lib --copy-files",
-    "push": "git pull --rebase && npm test && git push && npm run build",
-    "postpublish": "git push --follow-tags"
+    "build": "babel-plugin build",
+    "push": "babel-plugin publish"
   },
   "devDependencies": {
-    "babel-core": "^5.8.0",
     "babel-eslint": "^4.1.3",
     "chai": "^3.2.0",
     "eslint": "^1.5.1",
     "mocha": "^2.3.0"
+  },
+  "dependencies": {
+    "babel": "^5.8.34"
   }
 }
