@@ -16,8 +16,8 @@
     "test": "npm run lint && npm run mocha",
     "test:watch": "npm run mocha -- -w",
     "mocha": "mocha --require babel-core/register --reporter spec tests/**/*-test.js",
-    "lint": "eslint lib",
-    "build": "babel lib --out-dir lib --copy-files",
+    "lint": "eslint src",
+    "build": "babel src --out-dir lib --copy-files",
     "push": "git pull --rebase && npm test && git push && npm run build",
     "postpublish": "git push --follow-tags"
   },
