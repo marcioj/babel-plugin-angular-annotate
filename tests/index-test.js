@@ -71,4 +71,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts the todo mvc code', function() {
     assertTransformation('todo_mvc');
   });
+
+  it('converts modules with multiple variable assigment', function() {
+    assertTransformation('variable_assigment');
+  });
 });

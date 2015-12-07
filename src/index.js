@@ -4,10 +4,12 @@ export default function ({ Plugin, types: t }) {
   function findRootDeclarator(path) {
     if (path.isIdentifier()) {
       let binding = path.scope.getBinding(path.node.name);
-      // TODO handle more than one assigment. Ex:
-      // var a = 1; var b = a; var c = b; should return the variable declarator for a
       if (binding && binding.path.isVariableDeclarator()) {
-        return binding.path;
+        if (binding.path.get('init').isIdentifier()) {
+          return findRootDeclarator(binding.path.get('init'));
+        } else {
+          return binding.path;
+        }
       }
     }
   }
