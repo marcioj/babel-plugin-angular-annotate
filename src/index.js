@@ -31,12 +31,12 @@ export default function ({ Plugin, types: t }) {
     return false;
   }
 
-  function isAnnotationCandidate(path) {
-    return path.isCallExpression() && TYPES.test(getTypeName(path));
-  }
-
   function getTypeName(path) {
     return path.node.callee.property.name;
+  }
+
+  function isAnnotationCandidate(path) {
+    return path.isCallExpression() && TYPES.test(getTypeName(path));
   }
 
   function annotateFunction(func) {
@@ -57,13 +57,13 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
+  function last(array) {
+    return array[array.length-1];
+  }
+
   function annotateModuleConfigFunction(path) {
     let moduleLastArg = last(path.parentPath.get('arguments'));
     annotateFunction(moduleLastArg);
-  }
-
-  function last(array) {
-    return array[array.length-1];
   }
 
   let directiveControllerVisitor = {
