@@ -15,7 +15,7 @@
   "scripts": {
     "test": "npm run lint && npm run mocha",
     "test:watch": "npm run mocha -- -w",
-    "mocha": "mocha --require babel-core/register --reporter spec tests/**/*-test.js",
+    "mocha": "mocha --compilers js:babel/register --reporter spec tests/**/*-test.js",
     "lint": "eslint src",
     "build": "babel-plugin build",
     "push": "babel-plugin publish"
