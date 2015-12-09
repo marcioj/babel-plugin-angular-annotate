@@ -75,4 +75,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts modules with multiple variable assigment', function() {
     assertTransformation('variable_assigment');
   });
+
+  it('converts different identifiers', function() {
+    assertTransformation('identifiers');
+  });
 });

@@ -4,10 +4,21 @@ export default function ({ Plugin, types: t }) {
   function findRootDeclarator(path) {
     if (path.isIdentifier()) {
       let binding = path.scope.getBinding(path.node.name);
-      if (binding && binding.path.isVariableDeclarator()) {
-        if (binding.path.get('init').isIdentifier()) {
-          return findRootDeclarator(binding.path.get('init'));
-        } else {
+
+      if (binding) {
+        if (binding.path.isVariableDeclarator()) {
+          if (binding.path.get('init').isIdentifier()) {
+            return findRootDeclarator(binding.path.get('init'));
+          } else {
+            return binding.path;
+          }
+        }
+
+        if (binding.path.isFunctionDeclaration()) {
+          return binding.path;
+        }
+
+        if (binding.path.isClassDeclaration()) {
           return binding.path;
         }
       }
@@ -35,17 +46,54 @@ export default function ({ Plugin, types: t }) {
     return path.node.callee.property.name;
   }
 
+  function getFunctionExpressionFromConstructor(classPath) {
+    let functionExpression;
+    let visitor = {
+      MethodDefinition() {
+        if (this.node.kind === 'constructor') {
+          functionExpression = this.get('value');
+          this.stop();
+        }
+      }
+    };
+    classPath.traverse(visitor);
+    return functionExpression;
+  }
+
   function isAnnotationCandidate(path) {
     return path.isCallExpression() && TYPES.test(getTypeName(path));
   }
 
-  function annotateFunction(func) {
-    if (!func || !func.isFunctionExpression()) { return; }
-    let varLiterals = func.node.params.map(i => t.literal(i.name));
-    varLiterals.push(func.node);
-    func.replaceWith(
-      t.arrayExpression(varLiterals)
-    );
+  function annotateFunctionImpl(func, original) {
+    if (!func) { return; }
+
+    if (func.isFunctionExpression() || func.isFunctionDeclaration()) {
+      let varLiterals = func.node.params.map(i => t.literal(i.name));
+      varLiterals.push(original.node);
+      original.replaceWith(
+        t.arrayExpression(varLiterals)
+      );
+    }
+
+    if (func.isClassDeclaration()) {
+      let functionExpression = getFunctionExpressionFromConstructor(func);
+      annotateFunctionImpl(functionExpression, original);
+    }
+
+    if (func.isIdentifier()) {
+      let declarator = findRootDeclarator(func);
+      if (declarator) {
+        if (declarator.isVariableDeclarator()) {
+          annotateFunctionImpl(declarator.get('init'), original);
+        } else {
+          annotateFunctionImpl(declarator, original);
+        }
+      }
+    }
+  }
+
+  function annotateFunction(path) {
+    return annotateFunctionImpl(path, path);
   }
 
   function annotateObjectProperties(object) {
@@ -78,6 +126,7 @@ export default function ({ Plugin, types: t }) {
     ExpressionStatement() {
       if (this.get('expression.left').matchesPattern('this.$get')) {
         annotateFunction(this.get('expression.right'));
+        this.stop();
       }
     }
   };
@@ -89,15 +138,16 @@ export default function ({ Plugin, types: t }) {
           annotateModuleConfigFunction(this);
           let annotationCandidate = this.findParent(isAnnotationCandidate);
           if (annotationCandidate) {
-            let func = last(annotationCandidate.get('arguments'));
-            annotateFunction(func);
+            let candidate = last(annotationCandidate.get('arguments'));
+
+            annotateFunction(candidate);
+
             switch (getTypeName(annotationCandidate)) {
             case 'provider':
-              func.traverse(providerGetVisitor);
-              this.skip();
+              candidate.traverse(providerGetVisitor);
               break;
             case 'directive':
-              func.traverse(directiveControllerVisitor);
+              candidate.traverse(directiveControllerVisitor);
               break;
             }
           }
