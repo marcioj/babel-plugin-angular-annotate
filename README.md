@@ -14,10 +14,28 @@ npm install babel-plugin-angular-annotate
 
 ## Usage
 
-```js
-var babelPluginAngularAnnotate = require('babel-plugin-angular-annotate');
+### Via `.babelrc` (Recommended)
 
-babelPluginAngularAnnotate();
+**.babelrc**
+
+```json
+{
+  "plugins": ["angular-annotate"]
+}
+```
+
+### Via CLI
+
+```sh
+$ babel --plugins angular-annotate script.js
+```
+
+### Via Node API
+
+```javascript
+require("babel-core").transform("code", {
+  plugins: ["angular-annotate"]
+});
 ```
 
 ## Running Tests
