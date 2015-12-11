@@ -1,0 +1,26 @@
+var todo = angular.module('todomvc', ['ngRoute', 'ngResource'])
+      .config(['$routeProvider', function ($routeProvider) {
+        var fooConfig = {
+          controller: 'FooCtrl',
+          templateUrl: 'foo.html',
+          resolve: {
+            store: ['foo', function (foo) {
+            }]
+          }
+        };
+
+        var barConfig = {
+          controller: 'BarCtrl',
+          templateUrl: 'bar.html',
+          resolve: {
+            store: ['bar', function (bar) {
+            }]
+          }
+        };
+
+        $routeProvider.when('/foo', fooConfig);
+
+        let route = $routeProvider;
+
+        route.when('/bar', barConfig);
+      }]);

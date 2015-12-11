@@ -79,4 +79,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts different identifiers', function() {
     assertTransformation('identifiers');
   });
+
+  it('converts $routeProvider.when', function() {
+    assertTransformation('route_provider');
+  });
 });

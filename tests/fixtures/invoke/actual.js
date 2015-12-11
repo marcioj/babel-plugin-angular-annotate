@@ -4,4 +4,13 @@ angular.module('foo', [])
       $state.go('somewhere');
     });
     SomeService.invoke('someMehod');
+
+    let inj = $injector;
+    inj.invoke(function($http) {
+      $http.get('users');
+    });
+
+    inj.toString(function($http) {
+      $http.get('users');
+    });
   });

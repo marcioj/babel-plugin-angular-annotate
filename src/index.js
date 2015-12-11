@@ -6,20 +6,18 @@ export default function ({ Plugin, types: t }) {
       let binding = path.scope.getBinding(path.node.name);
 
       if (binding) {
-        if (binding.path.isVariableDeclarator()) {
-          if (binding.path.get('init').isIdentifier()) {
-            return findRootDeclarator(binding.path.get('init'));
+        let bpath = binding.path;
+
+        if (bpath.isVariableDeclarator()) {
+          if (bpath.get('init').isIdentifier()) {
+            return findRootDeclarator(bpath.get('init'));
           } else {
-            return binding.path;
+            return bpath;
           }
         }
 
-        if (binding.path.isFunctionDeclaration()) {
-          return binding.path;
-        }
-
-        if (binding.path.isClassDeclaration()) {
-          return binding.path;
+        if (bpath.isFunctionDeclaration() || bpath.isClassDeclaration() || bpath.isIdentifier()) {
+          return bpath;
         }
       }
     }
@@ -92,6 +90,39 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
+  function matchesPattern(memberExprPath, identifierName, methodName) {
+    if (!memberExprPath.get('property').isIdentifier({ name: methodName })) {
+      return false;
+    }
+    let object = memberExprPath.get('object');
+    let declarator = findRootDeclarator(object);
+    return declarator && declarator.isIdentifier({ name: identifierName });
+  }
+
+  function annotateInjectorInvoke(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$injector', 'invoke')) {
+      let func = last(memberExprPath.parentPath.get('arguments'));
+      annotateFunction(func);
+    }
+  }
+
+  // TODO this should likely be a plugin stuff
+  function annotateRouteProviderWhen(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
+      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
+      let declarator = findRootDeclarator(routeConfig);
+      if (declarator.get('init').isObjectExpression()) {
+        let properties = declarator.get('init.properties');
+        for (let i = 0; i < properties.length; i++) {
+          let property = properties[i];
+          if (property.get('key').isIdentifier({ name: 'resolve' })) {
+            annotateObjectProperties(property.get('value'));
+          }
+        }
+      }
+    }
+  }
+
   function annotateFunction(path) {
     return annotateFunctionImpl(path, path);
   }
@@ -153,25 +184,8 @@ export default function ({ Plugin, types: t }) {
           }
         }
 
-        if (this.matchesPattern('$injector.invoke')) {
-          let func = last(this.parentPath.get('arguments'));
-          annotateFunction(func);
-        }
-
-        // TODO this should likely be a plugin stuff
-        if (this.matchesPattern('$routeProvider.when')) {
-          let routeConfig = last(this.parentPath.get('arguments'));
-          let declarator = findRootDeclarator(routeConfig);
-          if (declarator.get('init').isObjectExpression()) {
-            let properties = declarator.get('init.properties');
-            for (let i = 0; i < properties.length; i++) {
-              let property = properties[i];
-              if (property.get('key').isIdentifier({ name: 'resolve' })) {
-                annotateObjectProperties(property.get('value'));
-              }
-            }
-          }
-        }
+        annotateInjectorInvoke(this);
+        annotateRouteProviderWhen(this);
       }
     }
   });
