@@ -1,6 +1,23 @@
 export default function ({ Plugin, types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
 
+  let directiveControllerVisitor = {
+    Property() {
+      if (this.get('key').isIdentifier({ name: 'controller' })) {
+        annotateFunction(this.get('value'));
+      }
+    }
+  };
+
+  let providerGetVisitor = {
+    ExpressionStatement() {
+      if (this.get('expression.left').matchesPattern('this.$get')) {
+        annotateFunction(this.get('expression.right'));
+        this.stop();
+      }
+    }
+  };
+
   function findRootDeclarator(path) {
     if (path.isIdentifier()) {
       let binding = path.scope.getBinding(path.node.name);
@@ -123,6 +140,26 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
+  function annotateProvide(memberExprPath) {
+    let types = ['decorator', 'service', 'factory', 'provider'];
+    let matchedType;
+
+    function matchesProvide(type) {
+      if (matchesPattern(memberExprPath, '$provide', type)) {
+        matchedType = type;
+        return true;
+      }
+    }
+
+    if (types.some(matchesProvide)) {
+      let func = last(memberExprPath.parentPath.get('arguments'));
+      annotateFunction(func);
+      if (matchedType === 'provider') {
+        func.traverse(providerGetVisitor);
+      }
+    }
+  }
+
   function annotateHttpProviderInterceptors(memberExprPath) {
     if (matchesPattern(memberExprPath, '$httpProvider', 'interceptors')) {
       if (memberExprPath.parentPath.get('property').isIdentifier({ name: 'push' })) {
@@ -154,23 +191,6 @@ export default function ({ Plugin, types: t }) {
     annotateFunction(moduleLastArg);
   }
 
-  let directiveControllerVisitor = {
-    Property() {
-      if (this.get('key').isIdentifier({ name: 'controller' })) {
-        annotateFunction(this.get('value'));
-      }
-    }
-  };
-
-  let providerGetVisitor = {
-    ExpressionStatement() {
-      if (this.get('expression.left').matchesPattern('this.$get')) {
-        annotateFunction(this.get('expression.right'));
-        this.stop();
-      }
-    }
-  };
-
   return new Plugin('angular-annotate', {
     visitor: {
       MemberExpression() {
@@ -196,6 +216,7 @@ export default function ({ Plugin, types: t }) {
         annotateInjectorInvoke(this);
         annotateRouteProviderWhen(this);
         annotateHttpProviderInterceptors(this);
+        annotateProvide(this);
       }
     }
   });

@@ -83,4 +83,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts $routeProvider.when', function() {
     assertTransformation('route_provider');
   });
+
+  it('converts $provide', function() {
+    assertTransformation('provide');
+  });
 });
