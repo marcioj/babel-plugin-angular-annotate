@@ -191,28 +191,31 @@ export default function ({ Plugin, types: t }) {
     annotateFunction(moduleLastArg);
   }
 
+  function annotateModuleType(memberExprPath) {
+    let annotationCandidate = memberExprPath.findParent(isAnnotationCandidate);
+    if (annotationCandidate) {
+      let candidate = last(annotationCandidate.get('arguments'));
+
+      annotateFunction(candidate);
+
+      switch (getTypeName(annotationCandidate)) {
+      case 'provider':
+        candidate.traverse(providerGetVisitor);
+        break;
+      case 'directive':
+        candidate.traverse(directiveControllerVisitor);
+        break;
+      }
+    }
+  }
+
   return new Plugin('angular-annotate', {
     visitor: {
       MemberExpression() {
         if (isAngularModule(this)) {
           annotateModuleConfigFunction(this);
-          let annotationCandidate = this.findParent(isAnnotationCandidate);
-          if (annotationCandidate) {
-            let candidate = last(annotationCandidate.get('arguments'));
-
-            annotateFunction(candidate);
-
-            switch (getTypeName(annotationCandidate)) {
-            case 'provider':
-              candidate.traverse(providerGetVisitor);
-              break;
-            case 'directive':
-              candidate.traverse(directiveControllerVisitor);
-              break;
-            }
-          }
+          annotateModuleType(this);
         }
-
         annotateInjectorInvoke(this);
         annotateRouteProviderWhen(this);
         annotateHttpProviderInterceptors(this);
