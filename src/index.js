@@ -123,6 +123,15 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
+  function annotateHttpProviderInterceptors(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$httpProvider', 'interceptors')) {
+      if (memberExprPath.parentPath.get('property').isIdentifier({ name: 'push' })) {
+        let func = memberExprPath.parentPath.parentPath.get('arguments')[0];
+        annotateFunction(func);
+      }
+    }
+  }
+
   function annotateFunction(path) {
     return annotateFunctionImpl(path, path);
   }
@@ -186,6 +195,7 @@ export default function ({ Plugin, types: t }) {
 
         annotateInjectorInvoke(this);
         annotateRouteProviderWhen(this);
+        annotateHttpProviderInterceptors(this);
       }
     }
   });
