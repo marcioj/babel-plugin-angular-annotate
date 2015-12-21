@@ -91,4 +91,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('does not convert value types', function() {
     assertTransformation('value');
   });
+
+  it('converts ui_router $stateProvider', function() {
+    assertTransformation('ui_router');
+  });
 });

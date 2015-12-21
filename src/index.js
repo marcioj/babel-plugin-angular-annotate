@@ -108,11 +108,20 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  function matchesPattern(memberExprPath, identifierName, methodName) {
+  function matchesPattern(memberExprPath, identifierName, methodName, chained = false) {
     if (!memberExprPath.get('property').isIdentifier({ name: methodName })) {
       return false;
     }
     let object = memberExprPath.get('object');
+
+    if (chained) {
+      while (object.isCallExpression()) {
+        if (object.get('callee').isMemberExpression()) {
+          object = object.get('callee.object');
+        }
+      }
+    }
+
     let declarator = findRootDeclarator(object);
     return declarator && declarator.isIdentifier({ name: identifierName });
   }
@@ -124,34 +133,55 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
+  function eachObjectPropery(objectOrIdentifier, callback) {
+    let object;
+
+    if (objectOrIdentifier.isObjectExpression()) {
+      object = objectOrIdentifier;
+    }
+
+    if (!object) {
+      let declarator = findRootDeclarator(objectOrIdentifier);
+      if (declarator.get('init').isObjectExpression()) {
+        object = declarator.get('init');
+      }
+    }
+
+    if (object) {
+      let properties = object.get('properties');
+      for (let i = 0; i < properties.length; i++) {
+        let property = properties[i];
+        callback(property);
+      }
+    }
+  }
+
   // TODO this should likely be a plugin stuff
   function annotateRouteProviderWhen(memberExprPath) {
     if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
-      let object;
       let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-
-      if (routeConfig.isObjectExpression()) {
-        object = routeConfig;
-      }
-
-      if (!object) {
-        let declarator = findRootDeclarator(routeConfig);
-        if (declarator.get('init').isObjectExpression()) {
-          object = declarator.get('init');
+      eachObjectPropery(routeConfig, property => {
+        if (property.get('key').isIdentifier({ name: 'resolve' })) {
+          annotateObjectProperties(property.get('value'));
+        } else if (property.get('key').isIdentifier({ name: 'controller' })) {
+          annotateFunction(property.get('value'));
         }
-      }
+      });
+    }
+  }
 
-      if (object) {
-        let properties = object.get('properties');
-        for (let i = 0; i < properties.length; i++) {
-          let property = properties[i];
-          if (property.get('key').isIdentifier({ name: 'resolve' })) {
-            annotateObjectProperties(property.get('value'));
-          } else if (property.get('key').isIdentifier({ name: 'controller' })) {
-            annotateFunction(property.get('value'));
-          }
+  function annotateStateProvider(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$stateProvider', 'state', true)) {
+      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
+      eachObjectPropery(routeConfig, property => {
+        if (property.get('key').isIdentifier({ name: 'resolve' })) {
+          annotateObjectProperties(property.get('value'));
+        } else if (property.get('key').isIdentifier({ name: 'controller' }) ||
+                   property.get('key').isIdentifier({ name: 'onEnter' }) ||
+                   property.get('key').isIdentifier({ name: 'onExit' })) {
+          annotateFunction(property.get('value'));
         }
-      }
+      });
     }
   }
 
@@ -232,6 +262,7 @@ export default function ({ Plugin, types: t }) {
         }
         annotateInjectorInvoke(this);
         annotateRouteProviderWhen(this);
+        annotateStateProvider(this);
         annotateHttpProviderInterceptors(this);
         annotateProvide(this);
       }
