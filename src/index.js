@@ -127,14 +127,28 @@ export default function ({ Plugin, types: t }) {
   // TODO this should likely be a plugin stuff
   function annotateRouteProviderWhen(memberExprPath) {
     if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
+      let object;
       let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-      let declarator = findRootDeclarator(routeConfig);
-      if (declarator.get('init').isObjectExpression()) {
-        let properties = declarator.get('init.properties');
+
+      if (routeConfig.isObjectExpression()) {
+        object = routeConfig;
+      }
+
+      if (!object) {
+        let declarator = findRootDeclarator(routeConfig);
+        if (declarator.get('init').isObjectExpression()) {
+          object = declarator.get('init');
+        }
+      }
+
+      if (object) {
+        let properties = object.get('properties');
         for (let i = 0; i < properties.length; i++) {
           let property = properties[i];
           if (property.get('key').isIdentifier({ name: 'resolve' })) {
             annotateObjectProperties(property.get('value'));
+          } else if (property.get('key').isIdentifier({ name: 'controller' })) {
+            annotateFunction(property.get('value'));
           }
         }
       }

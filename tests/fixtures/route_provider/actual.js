@@ -1,14 +1,5 @@
 var todo = angular.module('todomvc', ['ngRoute', 'ngResource'])
       .config(function ($routeProvider) {
-        var fooConfig = {
-          controller: 'FooCtrl',
-          templateUrl: 'foo.html',
-          resolve: {
-            store: function (foo) {
-            }
-          }
-        };
-
         var barConfig = {
           controller: 'BarCtrl',
           templateUrl: 'bar.html',
@@ -18,7 +9,16 @@ var todo = angular.module('todomvc', ['ngRoute', 'ngResource'])
           }
         };
 
-        $routeProvider.when('/foo', fooConfig);
+        $routeProvider.when('/foo', {
+          controller: function($scope) {
+            $scope.message = 'foo';
+          },
+          templateUrl: 'foo.html',
+          resolve: {
+            store: function (foo) {
+            }
+          }
+        });
 
         let route = $routeProvider;
 
