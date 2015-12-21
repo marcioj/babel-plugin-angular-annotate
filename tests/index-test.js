@@ -87,4 +87,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts $provide', function() {
     assertTransformation('provide');
   });
+
+  it('does not convert value types', function() {
+    assertTransformation('value');
+  });
 });

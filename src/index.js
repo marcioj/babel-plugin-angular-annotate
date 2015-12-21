@@ -43,6 +43,7 @@ export default function ({ Plugin, types: t }) {
   function isAngularModule(path) {
     if (path.isMemberExpression()) {
       if (path.matchesPattern('angular.module')) {
+        annotateModuleConfigFunction(path);
         return true;
       }
       let object = path.get('object');
@@ -213,7 +214,6 @@ export default function ({ Plugin, types: t }) {
     visitor: {
       MemberExpression() {
         if (isAngularModule(this)) {
-          annotateModuleConfigFunction(this);
           annotateModuleType(this);
         }
         annotateInjectorInvoke(this);
