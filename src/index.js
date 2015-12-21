@@ -47,7 +47,7 @@ export default function ({ Plugin, types: t }) {
       }
       let object = path.get('object');
       let declarator = findRootDeclarator(object);
-      if (declarator && declarator.get('init').isCallExpression()) {
+      if (declarator && declarator.get('init').isCallExpression() && declarator.get('init.callee.object').isCallExpression()) {
         return declarator.get('init.callee.object.callee').matchesPattern('angular.module');
       }
       if (object.isCallExpression()) {
