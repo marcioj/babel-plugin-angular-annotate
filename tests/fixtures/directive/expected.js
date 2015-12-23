@@ -9,7 +9,9 @@ class MessageCtrl3 {
 }
 
 angular.module('foo', [])
-  .directive('message', ['foo', function(foo) {
+  .directive('message', ['foo' , '$injector', function(foo, $injector) {
+    $injector.invoke(['foo', function(foo) {
+    }]);
     return {
       restrict: 'A',
       controller: ['$state', '$scope', function($state, $scope) {

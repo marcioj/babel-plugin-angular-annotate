@@ -1,10 +1,26 @@
 export default function ({ Plugin, types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
 
+  let defaultVisitor = {
+    MemberExpression() {
+      annotateInjectorInvoke(this);
+    }
+  };
+
+  let configVisitor = {
+    MemberExpression() {
+      annotateRouteProviderWhen(this);
+      annotateStateProvider(this);
+      annotateHttpProviderInterceptors(this);
+      annotateProvide(this);
+    }
+  };
+
   let directiveControllerVisitor = {
     Property() {
       if (this.get('key').isIdentifier({ name: 'controller' })) {
         annotateFunction(this.get('value'));
+        this.stop();
       }
     }
   };
@@ -234,6 +250,8 @@ export default function ({ Plugin, types: t }) {
   function annotateModuleConfigFunction(path) {
     let moduleLastArg = last(path.parentPath.get('arguments'));
     annotateFunction(moduleLastArg);
+    moduleLastArg.traverse(configVisitor);
+    moduleLastArg.stop();
   }
 
   function annotateModuleType(memberExprPath) {
@@ -250,7 +268,13 @@ export default function ({ Plugin, types: t }) {
       case 'directive':
         candidate.traverse(directiveControllerVisitor);
         break;
+      case 'config':
+        candidate.traverse(configVisitor);
+        break;
       }
+
+      candidate.traverse(defaultVisitor);
+      candidate.stop();
     }
   }
 
@@ -260,11 +284,6 @@ export default function ({ Plugin, types: t }) {
         if (isAngularModule(this)) {
           annotateModuleType(this);
         }
-        annotateInjectorInvoke(this);
-        annotateRouteProviderWhen(this);
-        annotateStateProvider(this);
-        annotateHttpProviderInterceptors(this);
-        annotateProvide(this);
       }
     }
   });
