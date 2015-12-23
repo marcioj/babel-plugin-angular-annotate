@@ -95,4 +95,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts ui_router $stateProvider', function() {
     assertTransformation('ui_router');
   });
+
+  it('converts chained calls', function() {
+    assertTransformation('chaining');
+  });
 });
