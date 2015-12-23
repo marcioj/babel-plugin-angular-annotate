@@ -1,6 +1,111 @@
 export default function ({ Plugin, types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
 
+  function findRootDeclarator(path) {
+    if (path.isIdentifier()) {
+      let binding = path.scope.getBinding(path.node.name);
+
+      if (binding) {
+        let bpath = binding.path;
+
+        if (bpath.isVariableDeclarator()) {
+          if (bpath.get('init').isIdentifier()) {
+            return findRootDeclarator(bpath.get('init'));
+          } else {
+            return bpath;
+          }
+        }
+
+        if (bpath.isFunctionDeclaration() || bpath.isClassDeclaration() || bpath.isIdentifier()) {
+          return bpath;
+        }
+      }
+    }
+  }
+
+  function matchesPattern(memberExprPath, identifierName, methodName, chained = false) {
+    if (!memberExprPath.get('property').isIdentifier({ name: methodName })) {
+      return false;
+    }
+    let object = memberExprPath.get('object');
+
+    if (chained) {
+      while (object.isCallExpression()) {
+        if (object.get('callee').isMemberExpression()) {
+          object = object.get('callee.object');
+        }
+      }
+    }
+
+    let declarator = findRootDeclarator(object);
+    return declarator && declarator.isIdentifier({ name: identifierName });
+  }
+
+  function annotateInjectorInvoke(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$injector', 'invoke')) {
+      let func = last(memberExprPath.parentPath.get('arguments'));
+      annotateFunction(func);
+    }
+  }
+
+  function annotateRouteProviderWhen(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
+      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
+      eachObjectPropery(routeConfig, property => {
+        if (property.get('key').isIdentifier({ name: 'resolve' })) {
+          annotateObjectProperties(property.get('value'));
+        } else if (property.get('key').isIdentifier({ name: 'controller' })) {
+          annotateFunction(property.get('value'));
+        }
+      });
+    }
+  }
+
+  function annotateStateProvider(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$stateProvider', 'state', true)) {
+      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
+      eachObjectPropery(routeConfig, property => {
+        if (property.get('key').isIdentifier({ name: 'resolve' })) {
+          annotateObjectProperties(property.get('value'));
+        } else if (property.get('key').isIdentifier({ name: 'controller' }) ||
+                   property.get('key').isIdentifier({ name: 'onEnter' }) ||
+                   property.get('key').isIdentifier({ name: 'onExit' })) {
+          annotateFunction(property.get('value'));
+        }
+      });
+    }
+  }
+
+  function annotateProvide(memberExprPath) {
+    let types = ['decorator', 'service', 'factory', 'provider'];
+    let matchedType;
+
+    function matchesProvide(type) {
+      if (matchesPattern(memberExprPath, '$provide', type)) {
+        matchedType = type;
+        return true;
+      }
+    }
+
+    if (types.some(matchesProvide)) {
+      let func = last(memberExprPath.parentPath.get('arguments'));
+      annotateFunction(func);
+      if (matchedType === 'provider') {
+        func.traverse(providerGetVisitor);
+      }
+    }
+  }
+
+  function annotateHttpProviderInterceptors(memberExprPath) {
+    if (matchesPattern(memberExprPath, '$httpProvider', 'interceptors')) {
+      if (memberExprPath.parentPath.get('property').isIdentifier({ name: 'push' })) {
+        let func = memberExprPath.parentPath.parentPath.get('arguments')[0];
+        annotateFunction(func);
+      }
+    }
+  }
+
+
   let defaultVisitor = {
     MemberExpression() {
       annotateInjectorInvoke(this);
@@ -33,28 +138,6 @@ export default function ({ Plugin, types: t }) {
       }
     }
   };
-
-  function findRootDeclarator(path) {
-    if (path.isIdentifier()) {
-      let binding = path.scope.getBinding(path.node.name);
-
-      if (binding) {
-        let bpath = binding.path;
-
-        if (bpath.isVariableDeclarator()) {
-          if (bpath.get('init').isIdentifier()) {
-            return findRootDeclarator(bpath.get('init'));
-          } else {
-            return bpath;
-          }
-        }
-
-        if (bpath.isFunctionDeclaration() || bpath.isClassDeclaration() || bpath.isIdentifier()) {
-          return bpath;
-        }
-      }
-    }
-  }
 
   function isAngularModule(path) {
     if (path.isMemberExpression()) {
@@ -124,31 +207,6 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  function matchesPattern(memberExprPath, identifierName, methodName, chained = false) {
-    if (!memberExprPath.get('property').isIdentifier({ name: methodName })) {
-      return false;
-    }
-    let object = memberExprPath.get('object');
-
-    if (chained) {
-      while (object.isCallExpression()) {
-        if (object.get('callee').isMemberExpression()) {
-          object = object.get('callee.object');
-        }
-      }
-    }
-
-    let declarator = findRootDeclarator(object);
-    return declarator && declarator.isIdentifier({ name: identifierName });
-  }
-
-  function annotateInjectorInvoke(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$injector', 'invoke')) {
-      let func = last(memberExprPath.parentPath.get('arguments'));
-      annotateFunction(func);
-    }
-  }
-
   function eachObjectPropery(objectOrIdentifier, callback) {
     let object;
 
@@ -168,64 +226,6 @@ export default function ({ Plugin, types: t }) {
       for (let i = 0; i < properties.length; i++) {
         let property = properties[i];
         callback(property);
-      }
-    }
-  }
-
-  // TODO this should likely be a plugin stuff
-  function annotateRouteProviderWhen(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
-      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-      eachObjectPropery(routeConfig, property => {
-        if (property.get('key').isIdentifier({ name: 'resolve' })) {
-          annotateObjectProperties(property.get('value'));
-        } else if (property.get('key').isIdentifier({ name: 'controller' })) {
-          annotateFunction(property.get('value'));
-        }
-      });
-    }
-  }
-
-  function annotateStateProvider(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$stateProvider', 'state', true)) {
-      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-      eachObjectPropery(routeConfig, property => {
-        if (property.get('key').isIdentifier({ name: 'resolve' })) {
-          annotateObjectProperties(property.get('value'));
-        } else if (property.get('key').isIdentifier({ name: 'controller' }) ||
-                   property.get('key').isIdentifier({ name: 'onEnter' }) ||
-                   property.get('key').isIdentifier({ name: 'onExit' })) {
-          annotateFunction(property.get('value'));
-        }
-      });
-    }
-  }
-
-  function annotateProvide(memberExprPath) {
-    let types = ['decorator', 'service', 'factory', 'provider'];
-    let matchedType;
-
-    function matchesProvide(type) {
-      if (matchesPattern(memberExprPath, '$provide', type)) {
-        matchedType = type;
-        return true;
-      }
-    }
-
-    if (types.some(matchesProvide)) {
-      let func = last(memberExprPath.parentPath.get('arguments'));
-      annotateFunction(func);
-      if (matchedType === 'provider') {
-        func.traverse(providerGetVisitor);
-      }
-    }
-  }
-
-  function annotateHttpProviderInterceptors(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$httpProvider', 'interceptors')) {
-      if (memberExprPath.parentPath.get('property').isIdentifier({ name: 'push' })) {
-        let func = memberExprPath.parentPath.parentPath.get('arguments')[0];
-        annotateFunction(func);
       }
     }
   }
