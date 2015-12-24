@@ -8,21 +8,38 @@ const babel = require('babel-core');
 
 describe('babel-plugin-angular-annotate tests', function() {
 
-  function transform(content, useAnnotate = true) {
+  function transform(content, configuration = [], useAnnotate = true) {
     let plugins = useAnnotate ? [plugin] : [];
     return babel.transform(content, {
       blacklist: ['strict'],
-      plugins: plugins
+      plugins: plugins,
+      extra: { 'angular-annotate': configuration }
     }).code;
   }
 
-  function assertTransformation(filepath) {
+  function assertTransformation(filepath, configuration = []) {
     var actualPath = path.join(__dirname, 'fixtures', filepath, 'actual.js');
     var actualContent = fs.readFileSync(actualPath, 'utf8');
     var expectedPath = path.join(__dirname, 'fixtures', filepath, 'expected.js');
     var expectedContent = fs.readFileSync(expectedPath, 'utf8');
-    expect(transform(actualContent)).to.equal(transform(expectedContent, false));
+    expect(transform(actualContent, configuration)).to.equal(transform(expectedContent, configuration, false));
   }
+
+  let routeProviderConfig = ["$routeProvider.when", ["_", {
+    "controller": "$injectFunction",
+    "resolve": "$injectObject"
+  }]];
+
+  let injectorInvokeConfig = ["$injector.invoke", ["$injectFunction"]];
+
+  let stateProviderConfig = ["$stateProvider.state", ["_", {
+    "resolve": "$injectObject",
+    "controller": "$injectFunction",
+    "onEnter": "$injectFunction",
+    "onExit": "$injectFunction"
+  }]];
+
+  let httpProvideInterceptorConfig = ["$httpProvider.interceptors.push", ["$injectFunction"]];
 
   it('converts module.controller', function() {
     assertTransformation('controller');
@@ -37,7 +54,7 @@ describe('babel-plugin-angular-annotate tests', function() {
   });
 
   it('converts module.directive', function() {
-    assertTransformation('directive');
+    assertTransformation('directive', [injectorInvokeConfig]);
   });
 
   it('converts module.filter', function() {
@@ -65,11 +82,11 @@ describe('babel-plugin-angular-annotate tests', function() {
   });
 
   it('converts $injector.invoke', function() {
-    assertTransformation('invoke');
+    assertTransformation('invoke', [injectorInvokeConfig]);
   });
 
   it('converts the todo mvc code', function() {
-    assertTransformation('todo_mvc');
+    assertTransformation('todo_mvc', [routeProviderConfig]);
   });
 
   it('converts modules with multiple variable assigment', function() {
@@ -81,7 +98,7 @@ describe('babel-plugin-angular-annotate tests', function() {
   });
 
   it('converts $routeProvider.when', function() {
-    assertTransformation('route_provider');
+    assertTransformation('route_provider', [routeProviderConfig]);
   });
 
   it('converts $provide', function() {
@@ -93,10 +110,14 @@ describe('babel-plugin-angular-annotate tests', function() {
   });
 
   it('converts ui_router $stateProvider', function() {
-    assertTransformation('ui_router');
+    assertTransformation('ui_router', [stateProviderConfig]);
   });
 
   it('converts chained calls', function() {
     assertTransformation('chaining');
+  });
+
+  it('converts $httpProvider.interceptors.push', function() {
+    assertTransformation('http_provider_interceptors', [httpProvideInterceptorConfig]);
   });
 });

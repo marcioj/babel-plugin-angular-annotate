@@ -1,6 +1,53 @@
 export default function ({ Plugin, types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
 
+  let configuration;
+
+  function annotateUsingConfiguration(memberExprPath) {
+    for(let entry of configuration) {
+      let [memberExpr, params] = entry;
+      let memberExprParts = memberExpr.split('.');
+      let identifier = memberExprParts[0];
+      let methods = memberExprParts.slice(1);
+
+      if (matchesPattern(memberExprPath, identifier, methods[0])) {
+        let currentMemberPath = memberExprPath;
+        methods = methods.slice(1);
+
+        for(let method of methods) {
+          currentMemberPath = currentMemberPath.parentPath;
+          if (!currentMemberPath.get('property').isIdentifier({ name: method })) {
+            return;
+          }
+        }
+
+        for (let index = 0; index < params.length; index++) {
+          let param = params[index];
+          let paramPath = currentMemberPath.parentPath.get('arguments')[index];
+
+          if (typeof param === 'string') {
+            if (param === '$injectFunction') {
+              annotateFunction(paramPath);
+            } else if (param === '$injectObject') {
+              annotateObjectProperties(paramPath);
+            }
+          } else if (typeof param === 'object' && param !== null) {
+            eachObjectPropery(paramPath, property => { // eslint-disable-line no-loop-func
+              if (property.get('key').isIdentifier()) {
+                let config = param[property.node.key.name];
+                if (config === '$injectFunction') {
+                  annotateFunction(property.get('value'));
+                } else if (config === '$injectObject') {
+                  annotateObjectProperties(property.get('value'));
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+
   function findRootDeclarator(path) {
     if (path.isIdentifier()) {
       let binding = path.scope.getBinding(path.node.name);
@@ -23,57 +70,21 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  function matchesPattern(memberExprPath, identifierName, methodName, chained = false) {
+  function matchesPattern(memberExprPath, identifierName, methodName) {
     if (!memberExprPath.get('property').isIdentifier({ name: methodName })) {
       return false;
     }
     let object = memberExprPath.get('object');
 
-    if (chained) {
-      while (object.isCallExpression()) {
-        if (object.get('callee').isMemberExpression()) {
-          object = object.get('callee.object');
-        }
+    // resolve chained calls
+    while (object.isCallExpression()) {
+      if (object.get('callee').isMemberExpression()) {
+        object = object.get('callee.object');
       }
     }
 
     let declarator = findRootDeclarator(object);
     return declarator && declarator.isIdentifier({ name: identifierName });
-  }
-
-  function annotateInjectorInvoke(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$injector', 'invoke')) {
-      let func = last(memberExprPath.parentPath.get('arguments'));
-      annotateFunction(func);
-    }
-  }
-
-  function annotateRouteProviderWhen(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$routeProvider', 'when')) {
-      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-      eachObjectPropery(routeConfig, property => {
-        if (property.get('key').isIdentifier({ name: 'resolve' })) {
-          annotateObjectProperties(property.get('value'));
-        } else if (property.get('key').isIdentifier({ name: 'controller' })) {
-          annotateFunction(property.get('value'));
-        }
-      });
-    }
-  }
-
-  function annotateStateProvider(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$stateProvider', 'state', true)) {
-      let routeConfig = last(memberExprPath.parentPath.get('arguments'));
-      eachObjectPropery(routeConfig, property => {
-        if (property.get('key').isIdentifier({ name: 'resolve' })) {
-          annotateObjectProperties(property.get('value'));
-        } else if (property.get('key').isIdentifier({ name: 'controller' }) ||
-                   property.get('key').isIdentifier({ name: 'onEnter' }) ||
-                   property.get('key').isIdentifier({ name: 'onExit' })) {
-          annotateFunction(property.get('value'));
-        }
-      });
-    }
   }
 
   function annotateProvide(memberExprPath) {
@@ -96,27 +107,15 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  function annotateHttpProviderInterceptors(memberExprPath) {
-    if (matchesPattern(memberExprPath, '$httpProvider', 'interceptors')) {
-      if (memberExprPath.parentPath.get('property').isIdentifier({ name: 'push' })) {
-        let func = memberExprPath.parentPath.parentPath.get('arguments')[0];
-        annotateFunction(func);
-      }
-    }
-  }
-
-
   let defaultVisitor = {
     MemberExpression() {
-      annotateInjectorInvoke(this);
+      annotateUsingConfiguration(this);
     }
   };
 
   let configVisitor = {
     MemberExpression() {
-      annotateRouteProviderWhen(this);
-      annotateStateProvider(this);
-      annotateHttpProviderInterceptors(this);
+      annotateUsingConfiguration(this);
       annotateProvide(this);
     }
   };
@@ -216,7 +215,7 @@ export default function ({ Plugin, types: t }) {
 
     if (!object) {
       let declarator = findRootDeclarator(objectOrIdentifier);
-      if (declarator.get('init').isObjectExpression()) {
+      if (declarator && declarator.get('init').isObjectExpression()) {
         object = declarator.get('init');
       }
     }
@@ -280,6 +279,12 @@ export default function ({ Plugin, types: t }) {
 
   return new Plugin('angular-annotate', {
     visitor: {
+      Program: {
+        enter(node, parent, scope, file) {
+          configuration = file.opts && file.opts.extra && file.opts.extra['angular-annotate'];
+          configuration = configuration || [];
+        }
+      },
       MemberExpression() {
         if (isAngularModule(this)) {
           annotateModuleType(this);
