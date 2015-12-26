@@ -18,10 +18,10 @@ npm install babel-plugin-angular-annotate
 
 **.babelrc**
 
-```json
+```js
 {
   "plugins": ["angular-annotate"],
-  "extra: { "angular-annotate": [configurations...] }
+  "extra": { "angular-annotate": [configurations...] }
 }
 ```
 
