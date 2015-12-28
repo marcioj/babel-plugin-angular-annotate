@@ -13,6 +13,7 @@
     "babel-plugin"
   ],
   "scripts": {
+    "preversion": "npm test",
     "test": "npm run lint && npm run mocha",
     "test:watch": "npm run mocha -- -w",
     "mocha": "mocha --compilers js:babel/register --reporter spec tests/**/*-test.js",
