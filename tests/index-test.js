@@ -120,4 +120,17 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('converts $httpProvider.interceptors.push', function() {
     assertTransformation('http_provider_interceptors', [httpProvideInterceptorConfig]);
   });
+
+  it('converts $httpProvider.interceptors.push using preset', function() {
+    assertTransformation('http_provider_interceptors', ['angular']);
+  });
+
+  it('throws on non existent preset', function() {
+    expect(_ => assertTransformation('http_provider_interceptors', ['whatever'])).to.throws(`Cannot find preset named 'whatever'`);
+  });
+
+  it('works with multiple presets', function() {
+    let customService = ['customService.injectableFunction', ['$injectFunction']];
+    assertTransformation('multiple_presets', ['angular', 'ngMaterial', customService]);
+  });
 });

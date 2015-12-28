@@ -1,10 +1,57 @@
 export default function ({ Plugin, types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
 
+  const presets = {
+    'angular': [
+      ['$injector.invoke', ['$injectFunction']],
+      ['$httpProvider.interceptors.push', ['$injectFunction']]
+    ],
+    'ngRoute': [
+      ['$routeProvider.when', ['_', {
+        'controller': '$injectFunction',
+        'resolve': '$injectObject'
+      }]]
+    ],
+    'ui.router': [
+      ['$stateProvider.state', ['_', {
+        'resolve': '$injectObject',
+        'controller': '$injectFunction',
+        'onEnter': '$injectFunction',
+        'onExit': '$injectFunction'
+      }]]
+    ],
+    'ngMaterial': [
+      ['$mdDialog.show', [{
+        'controller': '$injectFunction'
+      }]],
+      ['$mdToast.show', [{
+        'controller': '$injectFunction'
+      }]],
+      ['$mdBottomSheet.show', [{
+        'controller': '$injectFunction'
+      }]]
+    ]
+  };
+
   let configuration;
 
+  function normalizeConfig(config) {
+    return config.reduce(function(acc, entry) {
+      if (typeof entry === 'string') {
+        if (!(entry in presets)) {
+          throw new Error(`Cannot find preset named '${entry}'`);
+        }
+        return acc.concat(presets[entry]);
+      } else {
+        acc.push(entry);
+        return acc;
+      }
+    }, []);
+  }
+
   function annotateUsingConfiguration(memberExprPath) {
-    for(let entry of configuration) {
+    let config = normalizeConfig(configuration);
+    for(let entry of config) {
       let [memberExpr, params] = entry;
       let memberExprParts = memberExpr.split('.');
       let identifier = memberExprParts[0];
@@ -34,10 +81,10 @@ export default function ({ Plugin, types: t }) {
           } else if (typeof param === 'object' && param !== null) {
             eachObjectPropery(paramPath, property => { // eslint-disable-line no-loop-func
               if (property.get('key').isIdentifier()) {
-                let config = param[property.node.key.name];
-                if (config === '$injectFunction') {
+                let strategy = param[property.node.key.name];
+                if (strategy === '$injectFunction') {
                   annotateFunction(property.get('value'));
-                } else if (config === '$injectObject') {
+                } else if (strategy === '$injectObject') {
                   annotateObjectProperties(property.get('value'));
                 }
               }
