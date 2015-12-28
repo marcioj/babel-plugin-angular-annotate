@@ -128,6 +128,25 @@ $routeProvider.when('/foo', {
 
 Note that since we don't want to do anything in the routeName we use a `"_"` to ignore it.
 
+
+### Presets
+
+Since configuring each service injection can be tedius, this libray includes some presets like: `"angular", "ngMaterial" and "ui.router"`.
+So you can simple include the following in .babelrc:
+
+```json
+{
+  "plugins": ["angular-annotate"],
+  "extra": {
+    "angular-annotate": [
+      "angular", "ngMaterial", "ui.router"
+    ]
+  }
+}
+```
+
+Check the [main file](./src/index.js) to see what injections are currently handled.
+
 ## Running Tests
 
 `npm test`
