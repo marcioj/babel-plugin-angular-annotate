@@ -4,8 +4,6 @@
 
 [![Build Status][travis_badge]][travis]
 
-:warning: This is still under development :warning:
-
 ## Installation
 
 ```sh
@@ -131,7 +129,7 @@ Note that since we don't want to do anything in the routeName we use a `"_"` to 
 
 ### Presets
 
-Since configuring each service injection can be tedius, this libray includes some presets like: `"angular", "ngMaterial" and "ui.router"`.
+Since configuring each service injection can be tedius, this libray includes some presets like: `"angular", "ngMaterial", "ngRoute" and "ui.router"`.
 So you can simple include the following in .babelrc:
 
 ```json
