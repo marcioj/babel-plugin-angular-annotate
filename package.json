@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-angular-annotate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Make angular dependency annotation minification proof",
   "repository": "marcioj/babel-plugin-angular-annotate",
   "author": {
