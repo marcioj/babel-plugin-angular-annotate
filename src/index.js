@@ -110,7 +110,7 @@ export default function ({ Plugin, types: t }) {
           }
         }
 
-        if (bpath.isFunctionDeclaration() || bpath.isClassDeclaration() || bpath.isIdentifier()) {
+        if (bpath.isFunction() || bpath.isClassDeclaration() || bpath.isIdentifier()) {
           return bpath;
         }
       }
@@ -228,7 +228,7 @@ export default function ({ Plugin, types: t }) {
   function annotateFunctionImpl(func, original) {
     if (!func) { return; }
 
-    if (func.isFunctionExpression() || func.isFunctionDeclaration()) {
+    if (func.isFunction()) {
       let varLiterals = func.node.params.map(i => t.literal(i.name));
       varLiterals.push(original.node);
       original.replaceWith(

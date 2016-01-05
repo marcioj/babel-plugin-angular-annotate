@@ -1,5 +1,5 @@
 angular.module('foo', [])
-  .filter('sum', function(foo, bar) {
+  .filter('sum', (foo, bar) => {
 
     return function(a, b) {
       return a + b;
