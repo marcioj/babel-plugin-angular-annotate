@@ -133,4 +133,8 @@ describe('babel-plugin-angular-annotate tests', function() {
     let customService = ['customService.injectableFunction', ['$injectFunction']];
     assertTransformation('multiple_presets', ['angular', 'ngMaterial', customService]);
   });
+
+  it('goes through top level IIF', function() {
+    assertTransformation('iif', ['angular']);
+  });
 });

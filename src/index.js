@@ -204,7 +204,9 @@ export default function ({ Plugin, types: t }) {
   }
 
   function getTypeName(path) {
-    return path.node.callee.property.name;
+    if (path.isCallExpression() && path.get('callee').isMemberExpression()) {
+      return path.node.callee.property.name;
+    }
   }
 
   function getFunctionExpressionFromConstructor(classPath) {
