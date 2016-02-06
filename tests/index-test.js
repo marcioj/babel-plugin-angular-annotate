@@ -4,7 +4,7 @@ import fs from 'fs';
 import plugin from '../src';
 
 const expect = chai.expect;
-const babel = require('babel-core');
+const babel = require('babel');
 
 describe('babel-plugin-angular-annotate tests', function() {
 
