@@ -137,4 +137,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('goes through top level IIF', function() {
     assertTransformation('iif', ['angular']);
   });
+
+  it('works with classes passed as params', function() {
+    assertTransformation('classes_as_params', []);
+  });
 });

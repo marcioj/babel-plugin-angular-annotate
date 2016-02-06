@@ -79,7 +79,7 @@ export default function ({ Plugin, types: t }) {
               annotateObjectProperties(paramPath);
             }
           } else if (typeof param === 'object' && param !== null) {
-            eachObjectPropery(paramPath, property => { // eslint-disable-line no-loop-func
+            eachObjectProperty(paramPath, property => { // eslint-disable-line no-loop-func
               if (property.get('key').isIdentifier()) {
                 let strategy = param[property.node.key.name];
                 if (strategy === '$injectFunction') {
@@ -238,7 +238,7 @@ export default function ({ Plugin, types: t }) {
       );
     }
 
-    if (func.isClassDeclaration()) {
+    if (func.isClass()) {
       let functionExpression = getFunctionExpressionFromConstructor(func);
       annotateFunctionImpl(functionExpression, original);
     }
@@ -255,7 +255,7 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  function eachObjectPropery(objectOrIdentifier, callback) {
+  function eachObjectProperty(objectOrIdentifier, callback) {
     let object;
 
     if (objectOrIdentifier.isObjectExpression()) {
