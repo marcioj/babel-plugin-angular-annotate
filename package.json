@@ -8,6 +8,7 @@
     "email": "marciojunior1991@gmail.com",
     "url": "https://github.com/marcioj"
   },
+  "license": "MIT",
   "main": "lib/index.js",
   "keywords": [
     "babel-plugin"
