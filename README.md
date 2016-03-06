@@ -4,6 +4,10 @@
 
 [![Build Status][travis_badge]][travis]
 
+## Compatibility
+
+The version 2.x uses babel 6.x plugin API, for babel 5.x versions use the babel-plugin-angular-annotate 1.x
+
 ## Installation
 
 ```sh
@@ -18,8 +22,9 @@ npm install babel-plugin-angular-annotate
 
 ```js
 {
-  "plugins": ["angular-annotate"],
-  "extra": { "angular-annotate": [configurations...] }
+  "plugins": [
+    ["angular-annotate", [configurations...]]
+  ]
 }
 ```
 
@@ -33,8 +38,7 @@ $ babel --plugins angular-annotate script.js
 
 ```javascript
 require("babel-core").transform("code", {
-  plugins: ["angular-annotate"],
-  extra: { "angular-annotate": [configurations...] }
+  plugins: ["angular-annotate", [configurations...]],
 });
 ```
 
@@ -134,12 +138,7 @@ So you can simple include the following in .babelrc:
 
 ```json
 {
-  "plugins": ["angular-annotate"],
-  "extra": {
-    "angular-annotate": [
-      "angular", "ngMaterial", "ui.router"
-    ]
-  }
+  "plugins": ["angular-annotate", [configurations...]]
 }
 ```
 
