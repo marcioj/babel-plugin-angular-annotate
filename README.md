@@ -38,7 +38,9 @@ $ babel --plugins angular-annotate script.js
 
 ```javascript
 require("babel-core").transform("code", {
-  plugins: ["angular-annotate", [configurations...]],
+  plugins: [
+    ["angular-annotate", [configurations...]]
+  ]
 });
 ```
 
@@ -138,7 +140,9 @@ So you can simple include the following in .babelrc:
 
 ```json
 {
-  "plugins": ["angular-annotate", [configurations...]]
+  "plugins": [
+    ["angular-annotate", ["angular", "ngMaterial", "ui.router"]]
+  ]
 }
 ```
 
