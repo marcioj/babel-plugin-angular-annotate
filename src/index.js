@@ -1,5 +1,5 @@
 export default function ({ Plugin, types: t }) {
-  const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run)/;
+  const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run|component)/;
 
   const presets = {
     'angular': [
@@ -314,6 +314,7 @@ export default function ({ Plugin, types: t }) {
         candidate.traverse(providerGetVisitor);
         break;
       case 'directive':
+      case 'component':
         candidate.traverse(directiveControllerVisitor);
         break;
       case 'config':

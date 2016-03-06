@@ -141,4 +141,8 @@ describe('babel-plugin-angular-annotate tests', function() {
   it('works with classes passed as params', function() {
     assertTransformation('classes_as_params', []);
   });
+
+  it('works with components', function() {
+    assertTransformation('component', []);
+  });
 });
