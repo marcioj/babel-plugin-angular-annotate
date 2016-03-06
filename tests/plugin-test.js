@@ -4,16 +4,14 @@ import fs from 'fs';
 import plugin from '../src';
 
 const expect = chai.expect;
-const babel = require('babel');
+const babel = require('babel-core');
 
 describe('babel-plugin-angular-annotate tests', function() {
 
   function transform(content, configuration = [], useAnnotate = true) {
-    let plugins = useAnnotate ? [plugin] : [];
+    let plugins = useAnnotate ? [[plugin, configuration]] : [];
     return babel.transform(content, {
-      blacklist: ['strict'],
-      plugins: plugins,
-      extra: { 'angular-annotate': configuration }
+      plugins: plugins
     }).code;
   }
 

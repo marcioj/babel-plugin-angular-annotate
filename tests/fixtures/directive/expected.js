@@ -37,4 +37,12 @@ angular.module('foo', [])
       }
     }
   }])
+  .directive('deeper', ['foo', function(foo) {
+    return {
+      restrict: 'A',
+      controller: ['$state', '$scope', MessageCtrl3],
+      link: function(scope, elem, attrs) {
+      }
+    }
+  }])
 ;

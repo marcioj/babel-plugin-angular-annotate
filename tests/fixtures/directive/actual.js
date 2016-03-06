@@ -37,4 +37,12 @@ angular.module('foo', [])
       }
     }
   })
+  .directive('deeper', function(foo) {
+    return {
+      restrict: 'A',
+      controller: MessageCtrl3,
+      link: function(scope, elem, attrs) {
+      }
+    }
+  })
 ;

@@ -8,7 +8,7 @@
     "no-multi-spaces": 2,
     "key-spacing": 2,
     "no-return-assign": 2,
-    "consistent-return": 2,
+    "consistent-return": 0,
     "no-shadow": 2,
     "comma-dangle": 2,
     "no-empty": 2,

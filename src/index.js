@@ -1,4 +1,4 @@
-export default function ({ Plugin, types: t }) {
+export default function ({ types: t }) {
   const TYPES = /(controller|config|service|filter|animation|provider|directive|factory|run|component)/;
 
   const presets = {
@@ -155,51 +155,56 @@ export default function ({ Plugin, types: t }) {
   }
 
   let defaultVisitor = {
-    MemberExpression() {
-      annotateUsingConfiguration(this);
+    MemberExpression(path) {
+      annotateUsingConfiguration(path);
     }
   };
 
   let configVisitor = {
-    MemberExpression() {
-      annotateUsingConfiguration(this);
-      annotateProvide(this);
+    MemberExpression(path) {
+      annotateUsingConfiguration(path);
+      annotateProvide(path);
     }
   };
 
   let directiveControllerVisitor = {
-    Property() {
-      if (this.get('key').isIdentifier({ name: 'controller' })) {
-        annotateFunction(this.get('value'));
-        this.stop();
+    Property(path) {
+      if (path.get('key').isIdentifier({ name: 'controller' })) {
+        annotateFunction(path.get('value'));
+        path.stop();
       }
     }
   };
 
   let providerGetVisitor = {
-    ExpressionStatement() {
-      if (this.get('expression.left').matchesPattern('this.$get')) {
-        annotateFunction(this.get('expression.right'));
-        this.stop();
+    ExpressionStatement(path) {
+      if (path.get('expression.left').matchesPattern('this.$get')) {
+        annotateFunction(path.get('expression.right'));
+        path.stop();
       }
     }
   };
 
   function isAngularModule(path) {
-    if (path.isMemberExpression()) {
-      if (path.matchesPattern('angular.module')) {
-        annotateModuleConfigFunction(path);
-        return true;
-      }
-      let object = path.get('object');
-      let declarator = findRootDeclarator(object);
-      if (declarator && declarator.get('init').isCallExpression() && declarator.get('init.callee.object').isCallExpression()) {
-        return declarator.get('init.callee.object.callee').matchesPattern('angular.module');
-      }
-      if (object.isCallExpression()) {
-        return isAngularModule(object.get('callee'));
+    if (!path.isCallExpression()) { return false; }
+
+    while(path.get('callee').isMemberExpression() && !path.get('callee').matchesPattern('angular.module')) {
+      path = path.get('callee.object');
+    }
+
+    if (path.isIdentifier()) {
+      let declarator = findRootDeclarator(path);
+      if (declarator && declarator.get('init')) {
+        path = declarator.get('init');
+        return isAngularModule(path);
       }
     }
+
+    if (path.get('callee').matchesPattern('angular.module')) {
+      annotateModuleConfigFunction(path.get('callee'));
+      return true;
+    }
+
     return false;
   }
 
@@ -212,10 +217,10 @@ export default function ({ Plugin, types: t }) {
   function getFunctionExpressionFromConstructor(classPath) {
     let functionExpression;
     let visitor = {
-      MethodDefinition() {
-        if (this.node.kind === 'constructor') {
-          functionExpression = this.get('value');
-          this.stop();
+      ClassMethod(path) {
+        if (path.node.kind === 'constructor') {
+          functionExpression = path;
+          path.stop();
         }
       }
     };
@@ -223,15 +228,11 @@ export default function ({ Plugin, types: t }) {
     return functionExpression;
   }
 
-  function isAnnotationCandidate(path) {
-    return path.isCallExpression() && TYPES.test(getTypeName(path));
-  }
-
   function annotateFunctionImpl(func, original) {
     if (!func) { return; }
 
     if (func.isFunction()) {
-      let varLiterals = func.node.params.map(i => t.literal(i.name));
+      let varLiterals = func.node.params.map(i => t.stringLiteral(i.name));
       varLiterals.push(original.node);
       original.replaceWith(
         t.arrayExpression(varLiterals)
@@ -302,9 +303,10 @@ export default function ({ Plugin, types: t }) {
     moduleLastArg.stop();
   }
 
-  function annotateModuleType(memberExprPath) {
-    let annotationCandidate = memberExprPath.findParent(isAnnotationCandidate);
-    if (annotationCandidate) {
+  function annotateModuleType(annotationCandidate) {
+    let match = TYPES.test(getTypeName(annotationCandidate));
+
+    if (match) {
       let candidate = last(annotationCandidate.get('arguments'));
 
       annotateFunction(candidate);
@@ -327,19 +329,16 @@ export default function ({ Plugin, types: t }) {
     }
   }
 
-  return new Plugin('angular-annotate', {
+  return {
     visitor: {
-      Program: {
-        enter(node, parent, scope, file) {
-          configuration = file.opts && file.opts.extra && file.opts.extra['angular-annotate'];
-          configuration = configuration || [];
-        }
+      Program(path, { opts }) {
+        configuration = Array.isArray(opts) ? opts : [];
       },
-      MemberExpression() {
-        if (isAngularModule(this)) {
-          annotateModuleType(this);
+      CallExpression(path) {
+        if (isAngularModule(path)) {
+          annotateModuleType(path);
         }
       }
     }
-  });
+  };
 }
