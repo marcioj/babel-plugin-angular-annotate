@@ -46,7 +46,7 @@ require("babel-core").transform("code", {
 
 ## Known issues
 
-- Some injections wont work properly when using this plugin in conjuction with `babel-preset-es2016`. To get it working you need to use `"passPerPreset": true` in your `.babelrc`.
+- Some injections wont work properly when using this plugin in conjuction with `babel-preset-es2015`. To get it working you need to use `"passPerPreset": true` in your `.babelrc`.
 
 ## Configuration
 
