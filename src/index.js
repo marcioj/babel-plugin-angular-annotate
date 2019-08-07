@@ -240,8 +240,28 @@ export default function ({ types: t }) {
     }
 
     if (func.isClass()) {
-      let functionExpression = getFunctionExpressionFromConstructor(func);
-      annotateFunctionImpl(functionExpression, original);
+      const node = func.node;
+      const siblings = func.parent.body;
+
+      let has$injectStaticProperty = false;
+
+      if (siblings) {
+        const nextSiblings = siblings.slice(siblings.indexOf(node) + 1);
+
+        const staticProperties = nextSiblings.filter(it => {
+          return it.type === 'ExpressionStatement' &&
+          it.expression.type === 'AssignmentExpression' &&
+          it.expression.operator === '=' &&
+          it.expression.left.object.name === node.id.name
+        });
+
+        has$injectStaticProperty = staticProperties.some(it => it.expression.left.property.name === '$inject');
+      }
+
+      if (!has$injectStaticProperty) {
+        let functionExpression = getFunctionExpressionFromConstructor(func);
+        annotateFunctionImpl(functionExpression, original);
+      }
     }
 
     if (func.isIdentifier()) {

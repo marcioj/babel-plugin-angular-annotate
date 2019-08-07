@@ -1,6 +1,6 @@
 {
-  "name": "babel-plugin-angular-annotate",
-  "version": "2.0.1",
+  "name": "@jetbrains/babel-plugin-angular-annotate",
+  "version": "2.0.5",
   "description": "Make angular dependency annotation minification proof",
   "repository": "marcioj/babel-plugin-angular-annotate",
   "author": {
@@ -16,7 +16,7 @@
   "scripts": {
     "build": "babel src --out-dir lib --copy-files",
     "lint": "eslint src",
-    "mocha": "mocha --compilers js:babel-core/register --reporter spec tests/**/*-test.js",
+    "mocha": "mocha --require babel-core/register --reporter spec tests/**/*-test.js",
     "postversion": "git push && git push --tags",
     "preversion": "npm test",
     "test": "npm run lint && npm run mocha",
@@ -24,11 +24,12 @@
     "version": "npm run build && git add ."
   },
   "devDependencies": {
+    "babel-cli": "^6.24.1",
     "babel-core": "^6.10.4",
     "babel-eslint": "^6.1.0",
     "babel-preset-es2015": "^6.9.0",
     "chai": "^3.5.0",
     "eslint": "^3.0.1",
-    "mocha": "^2.5.3"
+    "mocha": "^6.0.0"
   }
 }
